@@ -1321,17 +1321,6 @@ Se necessário, ajuste a resposta antes de apresentá-la.`;
       window.open(url, "_blank", "noopener,noreferrer");
     }
 
-    function abrirChatGPT() {
-      const prompt = output.value.trim();
-
-      if (!prompt) {
-        showToast("Gere um prompt antes de abrir uma IA");
-        return;
-      }
-
-      abrirIA(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`);
-    }
-
     async function abrirComCopia(url) {
       const copiado = await copiarPrompt("Prompt copiado. Cole na IA.");
       if (copiado) abrirIA(url);
@@ -1425,7 +1414,7 @@ Se necessário, ajuste a resposta antes de apresentá-la.`;
       btnIA.setAttribute("aria-expanded", String(!aberto));
     });
 
-    btnChatGPT.addEventListener("click", abrirChatGPT);
+    btnChatGPT.addEventListener("click", () => abrirComCopia("https://chatgpt.com"));
     btnGemini.addEventListener("click", () => abrirComCopia("https://gemini.google.com/app"));
     btnClaude.addEventListener("click", () => abrirComCopia("https://claude.ai"));
     btnDeepSeek.addEventListener("click", () => abrirComCopia("https://chat.deepseek.com"));
