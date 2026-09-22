@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Assistente de IA</title>
+
+  <script>
+    (() => {
+      try {
+        const savedTheme = localStorage.getItem("assistenteIA_tema");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = savedTheme || (prefersDark ? "dark" : "light");
+      } catch (_) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --bg-soft: #eef3f9;
+      --surface: #ffffff;
+      --surface-subtle: #f8fafc;
+      --surface-hover: #f1f5f9;
+      --text: #172033;
+      --text-muted: #657084;
+      --border: #dfe6ef;
+      --border-strong: #cbd5e1;
+      --accent: #22579f;
+      --accent-hover: #19477f;
+      --accent-soft: #eaf2fd;
+      --accent-text: #174779;
+      --danger: #dc3545;
+      --danger-soft: #fff0f1;
+      --shadow: 0 20px 50px rgba(27, 47, 78, 0.08);
+      --shadow-soft: 0 8px 28px rgba(27, 47, 78, 0.06);
+    }
+
+    html[data-theme="dark"] {
+      --bg: #0d1117;
+      --bg-soft: #121821;
+      --surface: #151b24;
+      --surface-subtle: #10161f;
+      --surface-hover: #1c2531;
+      --text: #edf3fb;
+      --text-muted: #9aa9bb;
+      --border: #273242;
+      --border-strong: #344255;
+      --accent: #6ea8f7;
+      --accent-hover: #8bbafd;
+      --accent-soft: #172b45;
+      --accent-text: #a9cbff;
+      --danger: #ff7d8a;
+      --danger-soft: #321c22;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 8%, transparent), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    ::selection {
+      background: color-mix(in srgb, var(--accent) 26%, transparent);
+    }
+
+    .app-shell {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 20px 0 30px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 16px 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand-wrap {
+      min-width: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.2;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .brand-subtitle {
+      margin: 3px 0 0 44px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button,
+    .ghost-button,
+    .secondary-button,
+    .primary-button,
+    .danger-button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 150ms ease, background-color 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+    }
+
+    .icon-button {
+      display: inline-grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+    }
+
+    .icon-button:hover {
+      color: var(--text);
+      background: var(--surface-hover);
+    }
+
+    .icon-button:active,
+    .ghost-button:active,
+    .secondary-button:active,
+    .primary-button:active,
+    .danger-button:active {
+      transform: scale(0.98);
+    }
+
+    .help-panel {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .help-panel summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      list-style: none;
+      padding: 13px 16px;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .help-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .help-panel summary:hover {
+      color: var(--text);
+      background: var(--surface-subtle);
+    }
+
+    .help-content {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 14px 14px;
+    }
+
+    .help-step {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-subtle);
+    }
+
+    .help-step strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 0.84rem;
+    }
+
+    .help-step span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      margin: 0;
+      color: var(--text);
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-description {
+      margin: 4px 0 0;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--border-strong);
+    }
+
+    .status-pill.ready {
+      color: var(--accent-text);
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
+    }
+
+    .status-pill.ready .status-dot {
+      background: var(--accent);
+    }
+
+    .chat-body {
+      display: flex;
+      flex-direction: column;
+      min-height: 580px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      height: 430px;
+      min-height: 430px;
+      max-height: 430px;
+      overflow-y: auto;
+      padding: 18px;
+      background: var(--surface-subtle);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
+
+    .message-row {
+      display: flex;
+      margin-bottom: 12px;
+      animation: messageIn 180ms ease-out;
+    }
+
+    .message-row.user {
+      justify-content: flex-end;
+    }
+
+    .message-row.bot {
+      justify-content: flex-start;
+    }
+
+    .message-bubble {
+      width: fit-content;
+      max-width: min(84%, 620px);
+      padding: 11px 13px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .message-row.user .message-bubble {
+      color: #ffffff;
+      background: #22579f;
+      border-bottom-right-radius: 5px;
+      box-shadow: 0 8px 20px rgba(34, 87, 159, 0.18);
+    }
+
+    html[data-theme="dark"] .message-row.user .message-bubble {
+      color: #07101d;
+      background: #78adf5;
+      box-shadow: none;
+    }
+
+    .message-row.bot .message-bubble {
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 5px;
+    }
+
+    .composer {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .composer-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 8px;
+      border: 1px solid var(--border-strong);
+      border-radius: 15px;
+      background: var(--surface-subtle);
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+
+    .composer-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+      background: var(--surface);
+    }
+
+    #chatInput {
+      width: 100%;
+      min-height: 44px;
+      max-height: 130px;
+      resize: none;
+      overflow-y: auto;
+      border: 0;
+      outline: 0;
+      padding: 10px 8px;
+      color: var(--text);
+      background: transparent;
+      line-height: 1.45;
+      font-size: 0.9rem;
+    }
+
+    #chatInput::placeholder {
+      color: color-mix(in srgb, var(--text-muted) 82%, transparent);
+    }
+
+    .send-button {
+      display: inline-grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #ffffff;
+      cursor: pointer;
+      transition: transform 150ms ease, background-color 150ms ease, opacity 150ms ease;
+    }
+
+    html[data-theme="dark"] .send-button {
+      color: #07101d;
+    }
+
+    .send-button:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .send-button:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .composer-hint {
+      margin-top: 8px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      text-align: right;
+    }
+
+    .prompt-body {
+      padding: 16px;
+    }
+
+    #output {
+      display: block;
+      width: 100%;
+      height: 474px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      outline: 0;
+      padding: 16px;
+      color: var(--text);
+      background: var(--surface-subtle);
+      font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.84rem;
+      line-height: 1.62;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+
+    #output:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+      background: var(--surface);
+    }
+
+    #output::placeholder {
+      color: var(--text-muted);
+    }
+
+    .prompt-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 10px 2px 0;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+
+    .prompt-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .primary-button,
+    .secondary-button,
+    .danger-button,
+    .ghost-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    .primary-button {
+      color: #ffffff;
+      background: var(--accent);
+      box-shadow: 0 8px 20px rgba(34, 87, 159, 0.16);
+    }
+
+    html[data-theme="dark"] .primary-button {
+      color: #07101d;
+      box-shadow: none;
+    }
+
+    .primary-button:hover {
+      background: var(--accent-hover);
+    }
+
+    .secondary-button {
+      color: var(--accent-text);
+      background: var(--accent-soft);
+      border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+    }
+
+    .secondary-button:hover {
+      background: color-mix(in srgb, var(--accent-soft) 75%, var(--surface-hover));
+    }
+
+    .ghost-button {
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border);
+    }
+
+    .ghost-button:hover {
+      color: var(--text);
+      background: var(--surface-hover);
+    }
+
+    .danger-button {
+      margin-left: auto;
+      color: var(--danger);
+      background: transparent;
+      border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+    }
+
+    .danger-button:hover {
+      background: var(--danger-soft);
+    }
+
+    .ia-wrap {
+      position: relative;
+    }
+
+    .ia-menu {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      width: 180px;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      z-index: 40;
+    }
+
+    .ia-menu.hidden {
+      display: none;
+    }
+
+    .ia-option {
+      width: 100%;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 9px;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    .ia-option:hover {
+      background: var(--surface-hover);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      z-index: 100;
+      max-width: calc(100% - 32px);
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--text);
+      color: var(--surface);
+      box-shadow: var(--shadow);
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translate(-50%, 16px);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes messageIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-body {
+        min-height: auto;
+      }
+
+      .chat-messages {
+        height: 390px;
+        min-height: 390px;
+        max-height: 390px;
+      }
+
+      #output {
+        height: 420px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        width: min(100% - 20px, 1440px);
+        padding-top: 10px;
+      }
+
+      .topbar {
+        padding: 12px;
+        border-radius: 15px;
+      }
+
+      .brand-subtitle {
+        display: none;
+      }
+
+      .help-content {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace {
+        margin-top: 12px;
+        gap: 12px;
+      }
+
+      .panel {
+        border-radius: 16px;
+      }
+
+      .panel-header {
+        padding: 15px;
+      }
+
+      .chat-messages {
+        height: 360px;
+        min-height: 360px;
+        max-height: 360px;
+        padding: 14px;
+      }
+
+      .message-bubble {
+        max-width: 90%;
+      }
+
+      .prompt-body {
+        padding: 12px;
+      }
+
+      #output {
+        height: 400px;
+        padding: 14px;
+      }
+
+      .prompt-actions {
+        padding: 12px;
+      }
+
+      .primary-button,
+      .secondary-button {
+        flex: 1 1 auto;
+      }
+
+      .danger-button {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .ia-wrap {
+        flex: 1 1 auto;
+      }
+
+      .ia-wrap .secondary-button {
+        width: 100%;
+      }
+    }
+
+    .footer-credit {
+      margin-top: 18px;
+      padding: 8px 4px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.5L13.45 8.55L18.5 10L13.45 11.45L12 16.5L10.55 11.45L5.5 10L10.55 8.55L12 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M18.5 15.5L19.15 17.35L21 18L19.15 18.65L18.5 20.5L17.85 18.65L16 18L17.85 17.35L18.5 15.5Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <h1>Assistente de IA</h1>
+        </div>
+        <p class="brand-subtitle">Transforme uma ideia simples em um prompt pronto para usar.</p>
+      </div>
+
+      <div class="top-actions">
+        <button id="themeToggle" class="icon-button" type="button" aria-label="Alternar tema" title="Alternar tema">
+          <svg id="themeIconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20.5 14.2A8.2 8.2 0 0 1 9.8 3.5 8.6 8.6 0 1 0 20.5 14.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg id="themeIconSun" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 2V4M12 20V22M4.93 4.93L6.34 6.34M17.66 17.66L19.07 19.07M2 12H4M20 12H22M4.93 19.07L6.34 17.66M17.66 6.34L19.07 4.93" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <details class="help-panel">
+      <summary>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M9.8 9.2A2.3 2.3 0 0 1 12.1 7c1.35 0 2.4.9 2.4 2.2 0 1.7-1.85 2.05-2.35 3.15-.13.28-.15.55-.15.85" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+        </svg>
+        Como funciona?
+      </summary>
+      <div class="help-content">
+        <div class="help-step">
+          <strong>1. Escreva o mínimo</strong>
+          <span>Descreva o que você precisa com suas próprias palavras. Não é necessário saber criar prompts.</span>
+        </div>
+        <div class="help-step">
+          <strong>2. Use o prompt</strong>
+          <span>O sistema cria imediatamente uma versão estruturada e pronta para copiar ou abrir em uma IA.</span>
+        </div>
+        <div class="help-step">
+          <strong>3. Refine se quiser</strong>
+          <span>Envie qualquer detalhe adicional e o prompt será reconstruído com o novo contexto.</span>
+        </div>
+      </div>
+    </details>
+
+    <main class="workspace">
+      <section class="panel" aria-labelledby="chatTitle">
+        <div class="panel-header">
+          <div>
+            <h2 id="chatTitle" class="panel-title">O que você precisa?</h2>
+            <p class="panel-description">Descreva de forma simples. Você pode refinar depois, se quiser.</p>
+          </div>
+        </div>
+
+        <div class="chat-body">
+          <div id="chat" class="chat-messages" aria-live="polite" aria-label="Interação com o assistente"></div>
+
+          <form id="chatForm" class="composer">
+            <label class="sr-only" for="chatInput">Descreva o que você precisa</label>
+            <div class="composer-box">
+              <textarea id="chatInput" rows="1" placeholder="Ex.: Quero estudar Java para uma prova" autocomplete="off"></textarea>
+              <button id="btnEnviar" class="send-button" type="submit" aria-label="Enviar mensagem" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12H19M19 12L13.5 6.5M19 12L13.5 17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="composer-hint">Enter envia · Shift + Enter quebra a linha</div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="promptTitle">
+        <div class="panel-header">
+          <div>
+            <h2 id="promptTitle" class="panel-title">Prompt otimizado</h2>
+            <p class="panel-description">Gerado a partir da sua conversa e totalmente editável.</p>
+          </div>
+          <div id="promptStatus" class="status-pill">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="promptStatusText">Aguardando sua ideia</span>
+          </div>
+        </div>
+
+        <div class="prompt-body">
+          <label class="sr-only" for="output">Prompt gerado</label>
+          <textarea id="output" placeholder="Seu prompt aparecerá aqui após a primeira mensagem."></textarea>
+          <div class="prompt-meta">
+            <span id="promptCount">0 palavras · 0 caracteres</span>
+            <span>Você pode editar antes de copiar · novos refinamentos regeneram o prompt</span>
+          </div>
+        </div>
+
+        <div class="prompt-actions">
+          <button id="btnCopiar" class="primary-button" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M16 8V6A2 2 0 0 0 14 4H6A2 2 0 0 0 4 6V14A2 2 0 0 0 6 16H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Copiar prompt
+          </button>
+
+          <div class="ia-wrap">
+            <button id="btnIA" class="secondary-button" type="button" aria-expanded="false" aria-haspopup="true">
+              Escolha sua IA
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <div id="menuIA" class="ia-menu hidden" role="menu">
+              <button id="btnChatGPT" class="ia-option" type="button" role="menuitem">ChatGPT</button>
+              <button id="btnGemini" class="ia-option" type="button" role="menuitem">Gemini</button>
+              <button id="btnClaude" class="ia-option" type="button" role="menuitem">Claude</button>
+              <button id="btnDeepSeek" class="ia-option" type="button" role="menuitem">DeepSeek</button>
+            </div>
+          </div>
+
+          <button id="btnLimpar" class="danger-button" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7H20M9 7V5.5A1.5 1.5 0 0 1 10.5 4H13.5A1.5 1.5 0 0 1 15 5.5V7M7 7L8 20H16L17 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Limpar conversa
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-credit">Criado por Diogo Barbosa.</footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // =====================================================
+    // CONFIGURAÇÃO E ESTADO
+    // =====================================================
+
+    const STORAGE_KEY = "assistenteIA_v2";
+    const THEME_KEY = "assistenteIA_tema";
+
+    const mensagemInicial =
+      "Descreva o que você precisa. Pode escrever de forma simples — eu organizo o restante para você.";
+
+    const estadoInicial = () => ({
+      mensagens: [
+        {
+          tipo: "bot",
+          texto: mensagemInicial
+        }
+      ],
+      entradasUsuario: [],
+      promptAtual: "",
+      rascunho: ""
+    });
+
+    let estado = carregarEstado();
+    let toastTimeout;
+    let savePromptTimeout;
+
+    // =====================================================
+    // ELEMENTOS
+    // =====================================================
+
+    const chat = document.getElementById("chat");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+    const btnEnviar = document.getElementById("btnEnviar");
+
+    const output = document.getElementById("output");
+    const promptCount = document.getElementById("promptCount");
+    const promptStatus = document.getElementById("promptStatus");
+    const promptStatusText = document.getElementById("promptStatusText");
+
+    const btnCopiar = document.getElementById("btnCopiar");
+    const btnLimpar = document.getElementById("btnLimpar");
+    const btnIA = document.getElementById("btnIA");
+    const menuIA = document.getElementById("menuIA");
+
+    const btnChatGPT = document.getElementById("btnChatGPT");
+    const btnGemini = document.getElementById("btnGemini");
+    const btnClaude = document.getElementById("btnClaude");
+    const btnDeepSeek = document.getElementById("btnDeepSeek");
+
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIconMoon = document.getElementById("themeIconMoon");
+    const themeIconSun = document.getElementById("themeIconSun");
+    const toast = document.getElementById("toast");
+
+    // =====================================================
+    // PERSISTÊNCIA
+    // =====================================================
+
+    function carregarEstado() {
+      try {
+        const salvo = localStorage.getItem(STORAGE_KEY);
+        if (!salvo) return estadoInicial();
+
+        const dados = JSON.parse(salvo);
+
+        if (
+          !dados ||
+          !Array.isArray(dados.mensagens) ||
+          !Array.isArray(dados.entradasUsuario)
+        ) {
+          return estadoInicial();
+        }
+
+        return {
+          mensagens: dados.mensagens,
+          entradasUsuario: dados.entradasUsuario,
+          promptAtual: typeof dados.promptAtual === "string" ? dados.promptAtual : "",
+          rascunho: typeof dados.rascunho === "string" ? dados.rascunho : ""
+        };
+      } catch (_) {
+        return estadoInicial();
+      }
+    }
+
+    function salvarEstado() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
+    }
+
+    // =====================================================
+    // CHAT
+    // =====================================================
+
+    function renderizarChat() {
+      chat.innerHTML = "";
+
+      estado.mensagens.forEach((mensagem) => {
+        const linha = document.createElement("div");
+        linha.className = `message-row ${mensagem.tipo === "user" ? "user" : "bot"}`;
+
+        const bolha = document.createElement("div");
+        bolha.className = "message-bubble";
+        bolha.textContent = mensagem.texto;
+
+        linha.appendChild(bolha);
+        chat.appendChild(linha);
+      });
+
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function enviarMensagem() {
+      const texto = chatInput.value.trim();
+      if (!texto) return;
+
+      estado.mensagens.push({ tipo: "user", texto });
+      estado.entradasUsuario.push(texto);
+
+      estado.promptAtual = gerarPrompt(estado.entradasUsuario);
+
+      const primeiraMensagem = estado.entradasUsuario.length === 1;
+      const resposta = primeiraMensagem
+        ? "Prompt criado. Você já pode usar como está ou enviar qualquer detalhe adicional para refiná-lo."
+        : "Prompt atualizado com o novo contexto. Você pode continuar refinando ou utilizá-lo agora.";
+
+      estado.mensagens.push({ tipo: "bot", texto: resposta });
+      estado.rascunho = "";
+
+      salvarEstado();
+      renderizarChat();
+      atualizarPromptNaTela();
+
+      chatInput.value = "";
+      ajustarAlturaInput();
+      atualizarEstadoBotaoEnviar();
+      atualizarPlaceholder();
+      chatInput.focus();
+    }
+
+    // =====================================================
+    // SUPER PROMPT
+    // =====================================================
+
+    function gerarPrompt(entradas) {
+      if (!entradas.length) return "";
+
+      const solicitacaoInicial = entradas[0];
+      const refinamentos = entradas.slice(1);
+
+      const blocoRefinamentos = refinamentos.length
+        ? `\n\n## REFINAMENTOS POSTERIORES\n\n${refinamentos
+            .map((item, index) => `${index + 1}. ${item}`)
+            .join("\n")}`
+        : "";
+
+      return `# OBJETIVO
+
+Execute a solicitação do usuário da forma mais útil, precisa e adequada possível, preservando sua intenção original e transformando até entradas simples em resultados de alta qualidade.
+
+# SOLICITAÇÃO DO USUÁRIO
+
+## SOLICITAÇÃO INICIAL
+
+${solicitacaoInicial}${blocoRefinamentos}
+
+# INTERPRETAÇÃO DA TAREFA
+
+Antes de responder:
+
+1. Identifique o objetivo principal do usuário.
+2. Determine qual resultado ele realmente precisa.
+3. Considere todo o contexto disponível.
+4. Trate mensagens posteriores como complementos ou refinamentos das anteriores.
+5. Em caso de conflito entre instruções, priorize a informação mais recente, salvo indicação contrária do usuário.
+6. Diferencie instruções do usuário de conteúdos fornecidos apenas para análise, transformação, resumo, tradução ou referência.
+
+# ESCOPO E PRIORIDADE
+
+A profundidade, extensão e complexidade da resposta devem ser proporcionais ao objetivo do usuário.
+
+Considere especialmente:
+
+- urgência;
+- complexidade;
+- amplitude do pedido;
+- quantidade de informação disponível;
+- nível de detalhe solicitado ou necessário.
+
+Para pedidos simples, urgentes ou de escopo reduzido:
+
+- entregue primeiro apenas o núcleo necessário para atingir o objetivo imediato; trate conteúdos relacionados, aprofundamentos e exceções como secundários, mesmo que sejam úteis, salvo quando forem necessários para compreender ou executar o núcleo;
+- priorize os elementos de maior impacto;
+- não inclua informações complementares apenas por serem relacionadas ao tema;
+- expanda somente quando isso melhorar significativamente a compreensão ou execução.
+
+Para pedidos que explicitamente exijam profundidade, abrangência, exploração ou análise completa:
+
+- desenvolva o conteúdo na profundidade necessária;
+- organize a informação por relevância;
+- não sacrifique conteúdo importante apenas para tornar a resposta curta.
+
+Quando o usuário não indicar a profundidade desejada, entregue uma resposta suficiente para resolver bem o pedido, sem ampliar automaticamente o escopo para conteúdos relacionados. Não transforme automaticamente uma dúvida simples em uma análise completa, nem reduza uma tarefa complexa a um resumo superficial.
+
+Em todos os casos, prefira relevância à quantidade.
+
+# INFORMAÇÕES AUSENTES
+
+Não exija detalhes que possam ser resolvidos de forma razoável.
+
+Quando uma informação secundária estiver ausente:
+
+- escolha a opção mais adequada ao contexto;
+- use padrões razoáveis;
+- preserve a intenção do usuário;
+- não invente fatos específicos.
+
+Se houver mais de uma interpretação plausível, escolha a mais compatível com o contexto disponível.
+
+Faça uma pergunta somente quando faltar uma informação indispensável e prosseguir sem ela puder alterar significativamente o resultado.
+
+Nesse caso, solicite apenas o esclarecimento necessário.
+
+# ADAPTAÇÃO
+
+Escolha automaticamente a melhor abordagem para a tarefa.
+
+Adapte quando necessário:
+
+- linguagem;
+- tom;
+- nível técnico;
+- profundidade;
+- extensão;
+- estrutura;
+- quantidade de exemplos;
+- uso de código;
+- uso de listas, tabelas, etapas ou texto corrido.
+
+Não imponha uma estrutura fixa.
+
+Use cada recurso apenas quando contribuir diretamente para a clareza ou utilidade da resposta.
+
+Quando apropriado, assuma o papel profissional ou técnico mais adequado à tarefa.
+
+# CONFIABILIDADE
+
+Não invente fatos, dados, fontes, referências, resultados ou funcionalidades.
+
+Não apresente suposições como fatos.
+
+Quando houver incerteza relevante, deixe-a clara de maneira objetiva.
+
+Se uma limitação impedir uma resposta confiável, informe-a de forma direta.
+
+# RESPOSTA
+
+Entregue diretamente o resultado solicitado.
+
+Se o usuário especificar um formato, respeite-o.
+
+Caso contrário, escolha a estrutura que melhor cumpra o objetivo.
+
+Evite:
+
+- introduções genéricas;
+- repetições desnecessárias;
+- explicações sobre o próprio processo;
+- conteúdo secundário desnecessário;
+- perguntas que não sejam realmente necessárias;
+- fragmentação excessiva da resposta em muitas seções ou tópicos.
+
+A resposta deve exigir o mínimo possível de trabalho adicional do usuário.
+
+# VERIFICAÇÃO FINAL
+
+Antes de finalizar, verifique silenciosamente se a resposta:
+
+- atende ao objetivo real;
+- respeita as instruções e o contexto;
+- apresenta o conteúdo essencial antes do complementar;
+- possui profundidade e extensão proporcionais à necessidade;
+- evita suposições indevidas;
+- utiliza o formato mais adequado;
+- é clara, focada e imediatamente utilizável;
+- evita conteúdo genérico, redundante ou desnecessário.
+
+Se necessário, ajuste a resposta antes de apresentá-la.`;
+    }
+
+    // =====================================================
+    // PROMPT / CONTADORES
+    // =====================================================
+
+    function atualizarPromptNaTela() {
+      output.value = estado.promptAtual;
+      atualizarContador();
+      atualizarStatusPrompt();
+    }
+
+    function atualizarContador() {
+      const texto = output.value.trim();
+      const palavras = texto ? texto.split(/\s+/).length : 0;
+      const caracteres = output.value.length;
+
+      promptCount.textContent = `${palavras} ${palavras === 1 ? "palavra" : "palavras"} · ${caracteres} ${caracteres === 1 ? "caractere" : "caracteres"}`;
+    }
+
+    function atualizarStatusPrompt() {
+      const pronto = Boolean(output.value.trim());
+      promptStatus.classList.toggle("ready", pronto);
+      promptStatusText.textContent = pronto ? "Pronto para usar" : "Aguardando sua ideia";
+    }
+
+    function salvarEdicaoManualDoPrompt() {
+      estado.promptAtual = output.value;
+      atualizarContador();
+      atualizarStatusPrompt();
+
+      clearTimeout(savePromptTimeout);
+      savePromptTimeout = setTimeout(salvarEstado, 250);
+    }
+
+    // =====================================================
+    // ÁREA DE TEXTO / UX
+    // =====================================================
+
+    function ajustarAlturaInput() {
+      chatInput.style.height = "auto";
+      chatInput.style.height = `${Math.min(chatInput.scrollHeight, 130)}px`;
+    }
+
+    function atualizarEstadoBotaoEnviar() {
+      btnEnviar.disabled = !chatInput.value.trim();
+    }
+
+    function atualizarPlaceholder() {
+      chatInput.placeholder = estado.entradasUsuario.length
+        ? "Adicione um detalhe para refinar o prompt..."
+        : "Ex.: Quero estudar Java para uma prova";
+    }
+
+    // =====================================================
+    // TOAST
+    // =====================================================
+
+    function showToast(mensagem) {
+      clearTimeout(toastTimeout);
+      toast.textContent = mensagem;
+      toast.classList.add("show");
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2200);
+    }
+
+    // =====================================================
+    // COPIAR E ABRIR EM IA
+    // =====================================================
+
+    async function copiarPrompt(mensagemSucesso = "Prompt copiado") {
+      const texto = output.value.trim();
+
+      if (!texto) {
+        showToast("Gere um prompt antes de copiar");
+        return false;
+      }
+
+      try {
+        await navigator.clipboard.writeText(texto);
+        showToast(mensagemSucesso);
+        return true;
+      } catch (_) {
+        output.focus();
+        output.select();
+
+        try {
+          const copiado = document.execCommand("copy");
+          showToast(copiado ? mensagemSucesso : "Selecione e copie o prompt manualmente");
+          return copiado;
+        } catch (_) {
+          showToast("Selecione e copie o prompt manualmente");
+          return false;
+        }
+      }
+    }
+
+    function abrirIA(url) {
+      menuIA.classList.add("hidden");
+      btnIA.setAttribute("aria-expanded", "false");
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    function abrirChatGPT() {
+      const prompt = output.value.trim();
+
+      if (!prompt) {
+        showToast("Gere um prompt antes de abrir uma IA");
+        return;
+      }
+
+      abrirIA(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`);
+    }
+
+    async function abrirComCopia(url) {
+      const copiado = await copiarPrompt("Prompt copiado. Cole na IA.");
+      if (copiado) abrirIA(url);
+    }
+
+    // =====================================================
+    // LIMPAR CONVERSA
+    // =====================================================
+
+    function confirmarLimpeza() {
+      if (!estado.entradasUsuario.length && !output.value.trim()) {
+        showToast("A conversa já está vazia");
+        return;
+      }
+
+      const confirmar = window.confirm(
+        "Tem certeza que deseja apagar a conversa e o prompt atual?"
+      );
+
+      if (!confirmar) return;
+
+      estado = estadoInicial();
+      salvarEstado();
+      renderizarChat();
+      atualizarPromptNaTela();
+      atualizarPlaceholder();
+      chatInput.value = "";
+      ajustarAlturaInput();
+      atualizarEstadoBotaoEnviar();
+      chatInput.focus();
+      showToast("Conversa apagada");
+    }
+
+    // =====================================================
+    // DARK MODE
+    // =====================================================
+
+    function aplicarIconeTema() {
+      const dark = document.documentElement.dataset.theme === "dark";
+      themeIconMoon.classList.toggle("hidden", dark);
+      themeIconSun.classList.toggle("hidden", !dark);
+      themeToggle.setAttribute(
+        "aria-label",
+        dark ? "Ativar tema claro" : "Ativar tema escuro"
+      );
+      themeToggle.title = dark ? "Ativar tema claro" : "Ativar tema escuro";
+    }
+
+    function alternarTema() {
+      const atual = document.documentElement.dataset.theme;
+      const novo = atual === "dark" ? "light" : "dark";
+
+      document.documentElement.dataset.theme = novo;
+      localStorage.setItem(THEME_KEY, novo);
+      aplicarIconeTema();
+    }
+
+    // =====================================================
+    // EVENTOS
+    // =====================================================
+
+    chatForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      enviarMensagem();
+    });
+
+    chatInput.addEventListener("input", () => {
+      estado.rascunho = chatInput.value;
+      salvarEstado();
+      ajustarAlturaInput();
+      atualizarEstadoBotaoEnviar();
+    });
+
+    chatInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        enviarMensagem();
+      }
+    });
+
+    output.addEventListener("input", salvarEdicaoManualDoPrompt);
+
+    btnCopiar.addEventListener("click", () => copiarPrompt());
+    btnLimpar.addEventListener("click", confirmarLimpeza);
+    themeToggle.addEventListener("click", alternarTema);
+
+    btnIA.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const aberto = !menuIA.classList.contains("hidden");
+      menuIA.classList.toggle("hidden");
+      btnIA.setAttribute("aria-expanded", String(!aberto));
+    });
+
+    btnChatGPT.addEventListener("click", abrirChatGPT);
+    btnGemini.addEventListener("click", () => abrirComCopia("https://gemini.google.com/app"));
+    btnClaude.addEventListener("click", () => abrirComCopia("https://claude.ai"));
+    btnDeepSeek.addEventListener("click", () => abrirComCopia("https://chat.deepseek.com"));
+
+    window.addEventListener("click", (event) => {
+      if (!menuIA.contains(event.target) && !btnIA.contains(event.target)) {
+        menuIA.classList.add("hidden");
+        btnIA.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        menuIA.classList.add("hidden");
+        btnIA.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    // =====================================================
+    // INICIALIZAÇÃO
+    // =====================================================
+
+    function iniciar() {
+      aplicarIconeTema();
+      renderizarChat();
+      atualizarPromptNaTela();
+      atualizarPlaceholder();
+      chatInput.value = estado.rascunho || "";
+      ajustarAlturaInput();
+      atualizarEstadoBotaoEnviar();
+      chatInput.focus();
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>
